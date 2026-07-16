@@ -4,12 +4,12 @@
 #
 # Setiap entry bisa ditambah metadata tambahan sesuai kebutuhan (tag, owner, dsb)
 targets:
-  - url: "https://admin-panel-ui-tocom.paytm.com"
-    tag: "admin"
+  - url: "https://boss-bis-stage.paytm.com"
+    tag: "staging"
     owner: "paytm"
 
-  - url: "https://adsmanager-qa.paytm.com"
-    tag: "ads"
+  - url: "https://checker-portal-staging.paytm.com"
+    tag: "staging"
     owner: "paytm"
 
 # Tambahkan target lain di bawah ini dengan format yang sama.
