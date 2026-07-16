@@ -86,26 +86,37 @@ jobs:
       # Wordlist SecLists TIDAK di-commit ke repo (ukurannya besar).
       # Diambil file spesifiknya saja dari raw.githubusercontent.com,
       # dan di-cache supaya run berikutnya tidak download ulang.
+      #
+      # PENTING: cache key pakai suffix versi (-v2). Kalau path/isi berubah
+      # dan hasil sebelumnya sempat ke-cache secara salah (mis. karena 404),
+      # naikkan suffix ini (v2 -> v3, dst) supaya GitHub Actions tidak
+      # memakai cache lama yang isinya rusak/kosong.
       - name: Cache SecLists wordlist
         id: cache-wordlist
         uses: actions/cache@v4
         with:
           path: wordlists/seclist-cache.txt
-          key: seclist-${{ vars.SECLIST_PATH || 'Discovery/Web-Content/raw-medium-directories.txt' }}-v1
+          key: seclist-${{ vars.SECLIST_PATH || 'Discovery/Web-Content/raft-medium-directories.txt' }}-v2
 
       - name: Download SecLists wordlist (jika belum ada di cache)
         if: steps.cache-wordlist.outputs.cache-hit != 'true'
         env:
-          SECLIST_PATH: ${{ vars.SECLIST_PATH || 'Discovery/Web-Content/raw-medium-directories.txt' }}
+          SECLIST_PATH: ${{ vars.SECLIST_PATH || 'Discovery/Web-Content/raft-medium-directories.txt' }}
         run: |
           mkdir -p wordlists
           URL="https://raw.githubusercontent.com/danielmiessler/SecLists/master/${SECLIST_PATH}"
           echo "Downloading: $URL"
-          if curl -fsSL "$URL" -o wordlists/seclist-cache.txt; then
-            echo "Download berhasil"
-          else
-            echo "::warning::Gagal download SecLists, fallback ke wordlists/common.txt"
+
+          HTTP_CODE=$(curl -sSL -o wordlists/seclist-cache.txt -w "%{http_code}" "$URL")
+          FILE_SIZE=$(wc -c < wordlists/seclist-cache.txt 2>/dev/null || echo 0)
+
+          # Validasi: harus HTTP 200 DAN ukuran file wajar (>1000 bytes).
+          # Ini mencegah file 404 page atau file kosong ikut ke-cache sebagai "sukses".
+          if [ "$HTTP_CODE" != "200" ] || [ "$FILE_SIZE" -lt 1000 ]; then
+            echo "::warning::Download gagal atau file tidak valid (HTTP $HTTP_CODE, size $FILE_SIZE bytes). Path SECLIST_PATH mungkin salah/tidak ada di SecLists. Fallback ke wordlists/common.txt"
             cp wordlists/common.txt wordlists/seclist-cache.txt
+          else
+            echo "Download berhasil: $FILE_SIZE bytes"
           fi
 
       - name: Run ffuf scan
