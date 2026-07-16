@@ -4,12 +4,12 @@
 #
 # Setiap entry bisa ditambah metadata tambahan sesuai kebutuhan (tag, owner, dsb)
 targets:
-  - url: "https://client.teamviewer.com/"
-    tag: "client"
-    owner: "teamviwer"
+  - url: "https://akamai-oe-panel.paytm.com/"
+    tag: "akamai"
+    owner: "paytm"
 
-  - url: "https://configdl.teamviewer.com/"
-    tag: "staging"
-    owner: "TeamViewer"
+  - url: "https://api-payouts.paytm.com/"
+    tag: "api"
+    owner: "paytm"
 
 # Tambahkan target lain di bawah ini dengan format yang sama.
