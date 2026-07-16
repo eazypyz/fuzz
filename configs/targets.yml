@@ -4,12 +4,12 @@
 #
 # Setiap entry bisa ditambah metadata tambahan sesuai kebutuhan (tag, owner, dsb)
 targets:
-  - url: "https://akamai-oe-panel.paytm.com/"
-    tag: "akamai"
+  - url: "https://admin-panel-ui-tocom.paytm.com"
+    tag: "admin"
     owner: "paytm"
 
-  - url: "https://api-payouts.paytm.com/"
-    tag: "api"
+  - url: "https://adsmanager-qa.paytm.com"
+    tag: "ads"
     owner: "paytm"
 
 # Tambahkan target lain di bawah ini dengan format yang sama.
