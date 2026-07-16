@@ -1,0 +1,61 @@
+name: FFUF Fuzzing Scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target URL (opsional, override targets.yml)'
+        required: false
+  schedule:
+    - cron: '0 2 * * *'   # tiap hari jam 2 pagi
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.load-targets.outputs.targets) }}
+      fail-fast: false
+      max-parallel: 3       # jaga rate limit, jangan overload target
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ffuf
+        run: |
+          go install github.com/ffuf/ffuf/v2@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Run ffuf scan
+        env:
+          AUTH_TOKEN: ${{ secrets.TARGET_AUTH_TOKEN }}
+        run: |
+          ffuf -u "${{ matrix.target }}/FUZZ" \
+               -w wordlists/common.txt \
+               -H "Authorization: Bearer $AUTH_TOKEN" \
+               -mc 200,301,302,403 \
+               -o results-${{ strategy.job-index }}.json \
+               -of json \
+               -rate 20 \
+               -t 10
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffuf-results-${{ matrix.target }}
+          path: results-*.json
+
+  report:
+    needs: fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Parse & generate report
+        run: python scripts/parse_results.py
+
+      - name: Notify
+        env:
+          WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        run: python scripts/notify.py
