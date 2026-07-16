@@ -4,58 +4,139 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'Target URL (opsional, override targets.yml)'
+        description: "Target URL tunggal (opsional, override configs/targets.yml). Contoh: https://example.com"
         required: false
   schedule:
-    - cron: '0 2 * * *'   # tiap hari jam 2 pagi
+    - cron: "0 2 * * *"   # jalan otomatis tiap hari jam 02:00 UTC
+
+permissions:
+  contents: read
 
 jobs:
+  load-targets:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.set-targets.outputs.targets }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+
+      - name: Set target list
+        id: set-targets
+        run: |
+          set -euo pipefail
+
+          INPUT_TARGET="${{ github.event.inputs.target }}"
+
+          if [ -n "$INPUT_TARGET" ]; then
+            TARGETS_JSON=$(printf '["%s"]' "$INPUT_TARGET")
+          else
+            if [ ! -f configs/targets.yml ]; then
+              echo "::error::configs/targets.yml tidak ditemukan"
+              exit 1
+            fi
+            # -I=0 memaksa output satu baris (compact), wajib untuk GITHUB_OUTPUT
+            TARGETS_JSON=$(yq -o=json -I=0 '[.targets[].url]' configs/targets.yml)
+          fi
+
+          # Guard: pastikan hasil valid JSON array dan tidak kosong,
+          # supaya fromJson() di job berikutnya tidak pernah menerima string kosong.
+          if [ -z "$TARGETS_JSON" ] || [ "$TARGETS_JSON" = "[]" ] || [ "$TARGETS_JSON" = "null" ]; then
+            echo "::error::Daftar target kosong. Cek isi configs/targets.yml"
+            exit 1
+          fi
+
+          echo "Resolved targets: $TARGETS_JSON"
+          echo "targets=$TARGETS_JSON" >> "$GITHUB_OUTPUT"
+
   fuzz:
+    needs: load-targets
     runs-on: ubuntu-latest
     strategy:
       matrix:
         target: ${{ fromJson(needs.load-targets.outputs.targets) }}
       fail-fast: false
-      max-parallel: 3       # jaga rate limit, jangan overload target
+      max-parallel: 3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
       - name: Install ffuf
         run: |
           go install github.com/ffuf/ffuf/v2@latest
-          echo "$HOME/go/bin" >> $GITHUB_PATH
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Sanitize target name for filenames
+        id: safe-name
+        run: |
+          SAFE=$(echo "${{ matrix.target }}" | sed -E 's~https?://~~; s~[^a-zA-Z0-9.-]~_~g')
+          echo "name=$SAFE" >> "$GITHUB_OUTPUT"
 
       - name: Run ffuf scan
         env:
           AUTH_TOKEN: ${{ secrets.TARGET_AUTH_TOKEN }}
         run: |
+          mkdir -p results
           ffuf -u "${{ matrix.target }}/FUZZ" \
                -w wordlists/common.txt \
-               -H "Authorization: Bearer $AUTH_TOKEN" \
+               -H "Authorization: Bearer ${AUTH_TOKEN}" \
                -mc 200,301,302,403 \
-               -o results-${{ strategy.job-index }}.json \
+               -o "results/${{ steps.safe-name.outputs.name }}.json" \
                -of json \
                -rate 20 \
-               -t 10
+               -t 10 \
+               -timeout 10 \
+               -maxtime 600 || true
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: ffuf-results-${{ matrix.target }}
-          path: results-*.json
+          name: ffuf-results-${{ steps.safe-name.outputs.name }}
+          path: results/*.json
+          if-no-files-found: warn
 
   report:
     needs: fuzz
+    if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: downloaded-results
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
 
       - name: Parse & generate report
         run: python scripts/parse_results.py
 
-      - name: Notify
+      - name: Send Discord notification
         env:
-          WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: python scripts/notify.py
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffuf-report
+          path: report.md
