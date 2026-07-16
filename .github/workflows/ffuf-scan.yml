@@ -83,13 +83,38 @@ jobs:
           SAFE=$(echo "${{ matrix.target }}" | sed -E 's~https?://~~; s~[^a-zA-Z0-9.-]~_~g')
           echo "name=$SAFE" >> "$GITHUB_OUTPUT"
 
+      # Wordlist SecLists TIDAK di-commit ke repo (ukurannya besar).
+      # Diambil file spesifiknya saja dari raw.githubusercontent.com,
+      # dan di-cache supaya run berikutnya tidak download ulang.
+      - name: Cache SecLists wordlist
+        id: cache-wordlist
+        uses: actions/cache@v4
+        with:
+          path: wordlists/seclist-cache.txt
+          key: seclist-${{ vars.SECLIST_PATH || 'Discovery/Web-Content/raw-medium-directories.txt' }}-v1
+
+      - name: Download SecLists wordlist (jika belum ada di cache)
+        if: steps.cache-wordlist.outputs.cache-hit != 'true'
+        env:
+          SECLIST_PATH: ${{ vars.SECLIST_PATH || 'Discovery/Web-Content/raw-medium-directories.txt' }}
+        run: |
+          mkdir -p wordlists
+          URL="https://raw.githubusercontent.com/danielmiessler/SecLists/master/${SECLIST_PATH}"
+          echo "Downloading: $URL"
+          if curl -fsSL "$URL" -o wordlists/seclist-cache.txt; then
+            echo "Download berhasil"
+          else
+            echo "::warning::Gagal download SecLists, fallback ke wordlists/common.txt"
+            cp wordlists/common.txt wordlists/seclist-cache.txt
+          fi
+
       - name: Run ffuf scan
         env:
           AUTH_TOKEN: ${{ secrets.TARGET_AUTH_TOKEN }}
         run: |
           mkdir -p results
           ffuf -u "${{ matrix.target }}/FUZZ" \
-               -w wordlists/common.txt \
+               -w wordlists/seclist-cache.txt \
                -H "Authorization: Bearer ${AUTH_TOKEN}" \
                -mc 200,301,302,403 \
                -o "results/${{ steps.safe-name.outputs.name }}.json" \
