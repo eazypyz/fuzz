@@ -1,0 +1,15 @@
+# Daftar target scan.
+# PENTING: hanya masukkan target yang memang Anda miliki
+# atau yang sudah punya izin eksplisit (contoh: scope bug bounty resmi).
+#
+# Setiap entry bisa ditambah metadata tambahan sesuai kebutuhan (tag, owner, dsb)
+targets:
+  - url: "https://3p-integration.swiggy.com/"
+    tag: "staging"
+    owner: "swiggy"
+
+  - url: "https://crm-haproxy-v2.swiggy.com/"
+    tag: "proxy"
+    owner: "your-team"
+
+# Tambahkan target lain di bawah ini dengan format yang sama.
