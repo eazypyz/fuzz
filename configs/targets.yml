@@ -4,11 +4,15 @@
 #
 # Setiap entry bisa ditambah metadata tambahan sesuai kebutuhan (tag, owner, dsb)
 targets:
-  - url: "https://boss-bis-stage.paytm.com"
+  - url: "https://sentry-api.paytm.com/"
+    tag: "api"
+    owner: "paytm"
+
+  - url: "https://sig-alt.paytm.com"
     tag: "staging"
     owner: "paytm"
 
-  - url: "https://checker-portal-staging.paytm.com"
+  - url: "https://wealth-mf-report.paytm.com"
     tag: "staging"
     owner: "paytm"
 
