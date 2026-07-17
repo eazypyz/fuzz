@@ -4,16 +4,16 @@
 #
 # Setiap entry bisa ditambah metadata tambahan sesuai kebutuhan (tag, owner, dsb)
 targets:
-  - url: "https://checkout.eu.lookfantastic.com"
-    tag: "checkout"
-    owner: "look fantastic"
-
-  - url: "https://crlsets.brave.com"
+  - url: "https://ufix-staging.ubisoft.com"
     tag: "staging"
-    owner: "brave"
+    owner: "ubisoft"
 
-  - url: "https://dealscdnassets.paytm.com"
+  - url: "https://ump-staging4.paytm.com"
     tag: "staging"
     owner: "paytm"
+
+  - url: "https://horizon-api.www.lookfantastic.com"
+    tag: "api"
+    owner: "lookfantastic"
 
 # Tambahkan target lain di bawah ini dengan format yang sama.
