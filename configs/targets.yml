@@ -4,16 +4,16 @@
 #
 # Setiap entry bisa ditambah metadata tambahan sesuai kebutuhan (tag, owner, dsb)
 targets:
-  - url: "https://cpo-acp-static-proda.bankofamerica.com"
+  - url: "https://partner-helpcenter-dev.swiggy.com"
     tag: "production"
     owner: "ubisoft"
 
-  - url: "https://api-core.staging.jype.com"
+  - url: "https://openbanking.bov.com"
     tag: "api"
-    owner: "jype"
+    owner: "bov"
 
-  - url: "https://epay.bus.att.com"
-    tag: "production"
-    owner: "att"
+  - url: "https://vhc-app.swiggy.com"
+    tag: "app"
+    owner: "swiggy"
 
 # Tambahkan target lain di bawah ini dengan format yang sama.
