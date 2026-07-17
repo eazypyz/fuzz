@@ -36,12 +36,21 @@ def parse_file(filepath):
     except (json.JSONDecodeError, FileNotFoundError):
         return findings
 
-    target = data.get("config", {}).get("url", "unknown")
+    # PENTING: config.url adalah TEMPLATE mentah yang dipakai untuk -u,
+    # masih mengandung literal "FUZZ" yang BELUM di-substitute
+    # (contoh: "https://target.com/FUZZ"). Ini cuma dipakai untuk
+    # menampilkan domain/base target di kolom, bukan untuk path hasil scan.
+    config_url_template = data.get("config", {}).get("url", "unknown")
+    base_target = config_url_template.replace("/FUZZ", "").rstrip("/")
+
     for r in data.get("results", []):
+        # r["url"] adalah URL HASIL SCAN yang sudah di-resolve (FUZZ sudah
+        # diganti wordlist entry sebenarnya) — ini yang harus dipakai untuk
+        # ditampilkan, BUKAN direkonstruksi manual dari target + input.
         findings.append(
             {
-                "target": target,
-                "url": r.get("url", ""),
+                "target": base_target,
+                "full_url": r.get("url", ""),
                 "status": r.get("status", ""),
                 "length": r.get("length", ""),
                 "words": r.get("words", ""),
@@ -115,13 +124,17 @@ def main():
         if not all_findings:
             out.write("Tidak ada temuan pada scan ini.\n")
         else:
-            header = f"{'STATUS':<8}{'LENGTH':<10}{'WORDS':<8}{'TARGET':<30}PATH\n"
+            # Pakai separator " | " eksplisit, BUKAN fixed-width padding.
+            # Fixed-width (mis. f"{x:<30}") tidak memotong string yang lebih
+            # panjang dari width-nya, sehingga kolom bisa nempel tanpa spasi
+            # kalau isinya kebetulan lebih panjang dari perkiraan.
+            header = f"{'STATUS':<8} | {'LENGTH':<8} | {'WORDS':<7} | URL\n"
             out.write(header)
-            out.write("-" * len(header) + "\n")
+            out.write("-" * 70 + "\n")
             for f in all_findings:
                 out.write(
-                    f"{str(f['status']):<8}{str(f['length']):<10}{str(f['words']):<8}"
-                    f"{f['target']:<30}{f['input']}\n"
+                    f"{str(f['status']):<8} | {str(f['length']):<8} | "
+                    f"{str(f['words']):<7} | {f['full_url']}\n"
                 )
 
     print(f"[+] Report ditulis ke {OUTPUT_FILE} ({len(all_findings)} temuan)")
