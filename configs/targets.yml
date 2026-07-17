@@ -4,16 +4,16 @@
 #
 # Setiap entry bisa ditambah metadata tambahan sesuai kebutuhan (tag, owner, dsb)
 targets:
-  - url: "https://ufix-staging.ubisoft.com"
-    tag: "staging"
+  - url: "https://cpo-acp-static-proda.bankofamerica.com"
+    tag: "production"
     owner: "ubisoft"
 
-  - url: "https://ump-staging4.paytm.com"
-    tag: "staging"
-    owner: "paytm"
-
-  - url: "https://horizon-api.www.lookfantastic.com"
+  - url: "https://api-core.staging.jype.com"
     tag: "api"
-    owner: "lookfantastic"
+    owner: "jype"
+
+  - url: "https://epay.bus.att.com"
+    tag: "production"
+    owner: "att"
 
 # Tambahkan target lain di bawah ini dengan format yang sama.
