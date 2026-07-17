@@ -7,7 +7,7 @@ on:
         description: "Target URL tunggal (opsional, override configs/targets.yml). Contoh: https://example.com"
         required: false
   schedule:
-    - cron: "0 2 * * *"   # jalan otomatis tiap hari jam 02:00 UTC
+       # jalan otomatis tiap hari jam 02:00 UTC
 
 permissions:
   contents: read
