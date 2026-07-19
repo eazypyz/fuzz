@@ -8,12 +8,4 @@ targets:
     tag: "production"
     owner: "ubisoft"
 
-  - url: "https://openbanking.bov.com"
-    tag: "api"
-    owner: "bov"
-
-  - url: "https://vhc-app.swiggy.com"
-    tag: "app"
-    owner: "swiggy"
-
 # Tambahkan target lain di bawah ini dengan format yang sama.
