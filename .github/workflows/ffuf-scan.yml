@@ -125,7 +125,8 @@ jobs:
           ffuf -u "${{ matrix.target }}/FUZZ" \
                -w wordlists/seclist-cache.txt \
                -H "Authorization: Bearer ${AUTH_TOKEN}" \
-               -mc 200,301,302 \
+               -mc 200 \
+               -fs 404,403 \
                -o "results/${{ steps.safe-name.outputs.name }}.json" \
                -of json \
                -rate 20 \
