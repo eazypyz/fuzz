@@ -124,7 +124,7 @@ jobs:
           mkdir -p results
           ffuf -u "${{ matrix.target }}/FUZZ" \
                -w wordlists/seclist-cache.txt \
-               -H "Authorization: Bearer ${AUTH_TOKEN}" \
+               -H "User-Agent: Mozilla/5.0" \
                -mc 200 \
                -fs 404,403 \
                -o "results/${{ steps.safe-name.outputs.name }}.json" \
